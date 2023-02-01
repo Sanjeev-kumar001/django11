@@ -1,0 +1,27 @@
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      python: 3.8
+  pre_build:
+    commands:
+      - pip install -r requirements.txt
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 502193727466.dkr.ecr.ap-south-1.amazonaws.com
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - docker build -t djangonew .
+      - docker tag djangonew:latest 502193727466.dkr.ecr.ap-south-1.amazonaws.com/djangonew:latest  
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker images...
+      - docker push 502193727466.dkr.ecr.ap-south-1.amazonaws.com/djangonew:latest
+      - echo Writing image definitions file...
+      - printf '[{"name":"node-app","imageUri":"public.ecr.aws/q9b4t8y3/node-app:latest"}]' public.ecr.aws/q9b4t8y3/node-app:latest > imagedefinitions.json
+      - python manage.py runserver  &
+artifacts:
+    files:
+      - imagedefinitions.json 
